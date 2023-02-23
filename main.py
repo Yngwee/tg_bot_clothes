@@ -17,7 +17,7 @@ try:
 except:
     pass
 
-API_TOKEN = '6284031302:AAEbS259cGx5CJYF7eTG2Y_vlIgFCNomCIQ'
+API_TOKEN = '' #Token
 bot = Bot(token=API_TOKEN)
 dp = Dispatcher(bot)
 manager_id = 1871799232
