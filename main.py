@@ -17,7 +17,7 @@ try:
 except:
     pass
 
-API_TOKEN = '' #Token
+API_TOKEN = ''
 bot = Bot(token=API_TOKEN)
 dp = Dispatcher(bot)
 manager_id = 1871799232
@@ -44,8 +44,16 @@ async def reply_message(message: types.Message):
     if fl_question:
         await bot.send_message(chat_id=1871799232, text=f'Пользователь @{message.from_user.username} '
                                                         f'оставил Вам сообщение: {message.text}')
+        buttons = [
+            types.InlineKeyboardButton(text='Да', callback_data='yes'),
+            types.InlineKeyboardButton(text='Нет', callback_data='no')
+        ]
+        keyboard = types.InlineKeyboardMarkup()
+        keyboard.add(*buttons)
+        await bot.send_message(message.chat.id, text='Ваш вопрос отправлен мастеру, вскоре он вам ответит. '
+                                                     'Желаете посмотреть работы или задать ещё один вопрос ?',
+                               reply_markup=keyboard)
         fl_question = False
-        await get_action(message)
     else:
         await bot.send_message(chat_id=message.from_user.id, text='К сожалению, я вас не понимаю.')
         await get_action(message)
@@ -65,10 +73,13 @@ async def get_action(message: types.Message):
 async def get_photos(message: types.Message, count, directory):
     list_of_photos = os.listdir(path + list_of_dirs[count])
     media_group = []
-    for photo in list_of_photos:
-        full_path = path + directory + '/' + photo
-        media_group.append(types.InputMediaPhoto(open(full_path, 'rb')))
-    await bot.send_message(message.chat.id, text='Комплект №' + f'{count + 1}')
+    try:
+        for photo in list_of_photos:
+            full_path = path + directory + '/' + photo
+            media_group.append(types.InputMediaPhoto(open(full_path, 'rb')))
+        await bot.send_message(message.chat.id, text='Комплект №' + f'{count + 1}')
+    except:
+        await bot.send_message(message.chat.id, text='Фотографии не были найдены.')
     return media_group
 
 
@@ -92,7 +103,8 @@ async def callback(call: types.CallbackQuery):
                 await bot.send_media_group(call.message.chat.id,
                                            media=await get_photos(call.message, int(count), directory))
             buttons = [
-                types.InlineKeyboardButton(text='Оставить заказ', callback_data='order')
+                types.InlineKeyboardButton(text='Оставить заказ', callback_data='order'),
+                types.InlineKeyboardButton(text='Вернуться назад', callback_data='back')
             ]
             keyboard = types.InlineKeyboardMarkup()
             keyboard.add(*buttons)
@@ -100,8 +112,9 @@ async def callback(call: types.CallbackQuery):
                                    text='Если Вам что-то понравилось, можете оставить предварительный заказ, '
                                         'и с Вами вскоре свяжется мастер.',
                                    reply_markup=keyboard)
-            await get_action(call.message)
-        case 'back':
+        case 'no':
+            await bot.send_message(call.message.chat.id, text='Всего доброго!')
+        case 'back' | 'yes':
             await get_action(call.message)
 
 
